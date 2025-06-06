@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.BookingMapper">
+  <resultMap id="BaseResultMap" type="com.example.demo.model.Booking">
+    <id column="booking_id" jdbcType="VARCHAR" property="bookingId" />
+    <result column="user_id" jdbcType="VARCHAR" property="userId" />
+    <result column="flight_id" jdbcType="BIGINT" property="flightId" />
+    <result column="reference" jdbcType="VARCHAR" property="reference" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="booking_time" jdbcType="TIMESTAMP" property="bookingTime" />
+    <result column="total_price" jdbcType="DECIMAL" property="totalPrice" />
+    <result column="back_booking_id" jdbcType="VARCHAR" property="backBookingId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    booking_id, user_id, flight_id, reference, status, booking_time, total_price, back_booking_id
+  </sql>
+    <select id="selectBookings" parameterType="java.lang.String" resultType="com.example.demo.model.BookingResult">
+	select
+		fromBooking.booking_id as bookingId,
+		fromBooking.flight_number as flightNumber,
+		fromBooking.departure_datetime as departureTime,
+		fromBooking.dep_city as departureLocation,
+		fromBooking.destination_datetime as arrivalTime,
+		fromBooking.des_city as arrivalLocation,
+		fromBooking.total_price as amount,
+		fromBooking.hasRoundTrip,
+		toBooking.booking_id as returnbookingId,
+		toBooking.flight_number as returnflightNumber,
+		toBooking.departure_datetime as returndepartureTime,
+		toBooking.dep_city as returndepartureLocation,
+		toBooking.destination_datetime as returnarrivalTime,
+		toBooking.des_city as returnarrivalLocation,
+		toBooking.total_price as returnamount
+	from (SELECT 
+			main.booking_id,
+			flight.flight_number,
+			date_format(concat(departure_date,' ',departure_time),'%Y-%m-%d %H:%i:%s') as departure_datetime,
+			concat(arr.airport_name,'(',arr.airport_city,')') as dep_city,
+			date_format(concat(destination_date,' ',destination_time),'%Y-%m-%d %H:%i:%s') as destination_datetime,
+			concat(des.airport_name,'(',des.airport_city,')') as des_city,
+			main.total_price,
+			CASE WHEN main.back_booking_id IS NULL THEN false ELSE true END AS hasRoundTrip,
+			main.back_booking_id
+		FROM booking main inner join flight on main.flight_id = flight.flight_id 
+			inner join airport arr on flight.departure_airport_id = arr.airport_id
+			inner join airport des on flight.destination_airport_id = des.airport_id
+		where user_id=#{userId,jdbcType=VARCHAR}
+			and not exists(
+				select 1 from booking bk where user_id = #{userId,jdbcType=VARCHAR} and bk.back_booking_id = main.booking_id
+		)) fromBooking left join 
+		(SELECT 
+			main.booking_id,
+			flight.flight_number,
+			date_format(concat(departure_date,' ',departure_time),'%Y-%m-%d %H:%i:%s') as departure_datetime,
+			concat(arr.airport_name,'(',arr.airport_city,')') as dep_city,
+			date_format(concat(destination_date,' ',destination_time),'%Y-%m-%d %H:%i:%s') as destination_datetime,
+			concat(des.airport_name,'(',des.airport_city,')') as des_city,
+			main.total_price
+		FROM booking main inner join flight on main.flight_id = flight.flight_id 
+			inner join airport arr on flight.departure_airport_id = arr.airport_id
+			inner join airport des on flight.destination_airport_id = des.airport_id
+		where user_id=#{userId,jdbcType=VARCHAR}
+			and exists(
+				select 1 from booking bk where user_id = #{userId,jdbcType=VARCHAR} and bk.back_booking_id = main.booking_id
+		)) toBooking on fromBooking.back_booking_id = toBooking.booking_id
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from booking
+    where booking_id = #{bookingId,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from booking
+    where booking_id = #{bookingId,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.example.demo.model.Booking">
+    insert into booking (booking_id, user_id, flight_id, 
+      reference, status, booking_time, 
+      total_price, back_booking_id)
+    values (#{bookingId,jdbcType=VARCHAR}, #{userId,jdbcType=VARCHAR}, #{flightId,jdbcType=BIGINT}, 
+      #{reference,jdbcType=VARCHAR}, #{status,jdbcType=VARCHAR}, #{bookingTime,jdbcType=TIMESTAMP}, 
+      #{totalPrice,jdbcType=DECIMAL}, #{backBookingId,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.example.demo.model.Booking">
+    insert into booking
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="bookingId != null">
+        booking_id,
+      </if>
+      <if test="userId != null">
+        user_id,
+      </if>
+      <if test="flightId != null">
+        flight_id,
+      </if>
+      <if test="reference != null">
+        reference,
+      </if>
+      <if test="status != null">
+        status,
+      </if>
+      <if test="bookingTime != null">
+        booking_time,
+      </if>
+      <if test="totalPrice != null">
+        total_price,
+      </if>
+      <if test="backBookingId != null">
+        back_booking_id,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="bookingId != null">
+        #{bookingId,jdbcType=VARCHAR},
+      </if>
+      <if test="userId != null">
+        #{userId,jdbcType=VARCHAR},
+      </if>
+      <if test="flightId != null">
+        #{flightId,jdbcType=BIGINT},
+      </if>
+      <if test="reference != null">
+        #{reference,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="bookingTime != null">
+        #{bookingTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="totalPrice != null">
+        #{totalPrice,jdbcType=DECIMAL},
+      </if>
+      <if test="backBookingId != null">
+        #{backBookingId,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.example.demo.model.Booking">
+    update booking
+    <set>
+      <if test="userId != null">
+        user_id = #{userId,jdbcType=VARCHAR},
+      </if>
+      <if test="flightId != null">
+        flight_id = #{flightId,jdbcType=BIGINT},
+      </if>
+      <if test="reference != null">
+        reference = #{reference,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        status = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="bookingTime != null">
+        booking_time = #{bookingTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="totalPrice != null">
+        total_price = #{totalPrice,jdbcType=DECIMAL},
+      </if>
+      <if test="backBookingId != null">
+        back_booking_id = #{backBookingId,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where booking_id = #{bookingId,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.example.demo.model.Booking">
+    update booking
+    set user_id = #{userId,jdbcType=VARCHAR},
+      flight_id = #{flightId,jdbcType=BIGINT},
+      reference = #{reference,jdbcType=VARCHAR},
+      status = #{status,jdbcType=VARCHAR},
+      booking_time = #{bookingTime,jdbcType=TIMESTAMP},
+      total_price = #{totalPrice,jdbcType=DECIMAL},
+      back_booking_id = #{backBookingId,jdbcType=VARCHAR}
+    where booking_id = #{bookingId,jdbcType=VARCHAR}
+  </update>
+</mapper>

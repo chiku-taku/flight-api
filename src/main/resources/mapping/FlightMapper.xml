@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.FlightMapper">
+  <resultMap id="BaseResultMap" type="com.example.demo.model.Flight">
+    <id column="flight_id" jdbcType="BIGINT" property="flightId" />
+    <result column="departure_airport_id" jdbcType="BIGINT" property="departureAirportId" />
+    <result column="destination_airport_id" jdbcType="BIGINT" property="destinationAirportId" />
+    <result column="departure_date" jdbcType="DATE" property="departureDate" />
+    <result column="departure_time" jdbcType="TIME" property="departureTime" />
+    <result column="destination_date" jdbcType="DATE" property="destinationDate" />
+    <result column="destination_time" jdbcType="TIME" property="destinationTime" />
+    <result column="statue" jdbcType="VARCHAR" property="statue" />
+    <result column="first_class_price" jdbcType="DECIMAL" property="firstClassPrice" />
+    <result column="business_class_price" jdbcType="DECIMAL" property="businessClassPrice" />
+    <result column="economy_class_price" jdbcType="DECIMAL" property="economyClassPrice" />
+    <result column="first_class_num" jdbcType="INTEGER" property="firstClassNum" />
+    <result column="business_class_num" jdbcType="INTEGER" property="businessClassNum" />
+    <result column="economy_class_num" jdbcType="INTEGER" property="economyClassNum" />
+    <result column="airline" jdbcType="VARCHAR" property="airline" />
+    <result column="flight_number" jdbcType="VARCHAR" property="flightNumber" />
+    <result column="amenities" jdbcType="VARCHAR" property="amenities" />
+  </resultMap>
+  <resultMap id="SearchResultMap" type="com.example.demo.model.FlightSearchResult">
+    <id column="flight_id" jdbcType="BIGINT" property="flightId" />  
+    <result column="departure_arr_code" jdbcType="VARCHAR" property="departureArrCode" />
+    <result column="departure_arr_name" jdbcType="VARCHAR" property="departureArrName" />
+    <result column="departure_arr_city" jdbcType="VARCHAR" property="departureArrCity" />
+    <result column="destination_des_code" jdbcType="VARCHAR" property="destinationDesCode" />
+    <result column="destination_des_name" jdbcType="VARCHAR" property="destinationDesName" />
+    <result column="destination_des_city" jdbcType="VARCHAR" property="destinationDesCity" />
+    <result column="departure_datetime" jdbcType="VARCHAR" property="departureDatetime" />
+    <result column="destination_datetime" jdbcType="VARCHAR" property="destinationDatetime" />
+    <result column="duration" jdbcType="VARCHAR" property="duration" />
+    <result column="statue" jdbcType="VARCHAR" property="statue" />
+    <result column="lease_price" jdbcType="DECIMAL" property="leasePrice" />
+    <result column="seatnum" jdbcType="INTEGER" property="seatnum" />
+    <result column="airline" jdbcType="VARCHAR" property="airline" />
+    <result column="flight_number" jdbcType="VARCHAR" property="flightNumber" />
+    <result column="amenities" jdbcType="VARCHAR" property="amenities" />
+    <result column="availablefirstClassSeats" jdbcType="INTEGER" property="availablefirstClassSeats" />
+    <result column="availablebusinessSeats" jdbcType="INTEGER" property="availablebusinessSeats" />
+    <result column="availableeconomySeats" jdbcType="INTEGER" property="availableeconomySeats" />
+    <result column="economyPrice" jdbcType="DECIMAL" property="economyPrice" />
+    <result column="businessPrice" jdbcType="DECIMAL" property="businessPrice" />
+    <result column="firstClassPrice" jdbcType="DECIMAL" property="firstClassPrice" />
+    
+  </resultMap>
+  <sql id="Base_Column_List">
+    flight_id, departure_airport_id, destination_airport_id, departure_date, departure_time, 
+    destination_date, destination_time, statue, first_class_price, business_class_price, 
+    economy_class_price, first_class_num, business_class_num, economy_class_num, airline, 
+    flight_number, amenities
+  </sql>
+  <select id="selectByTrip" parameterType="com.example.demo.model.FlightSearchParam" resultMap="SearchResultMap">
+	select 
+		flight_id,
+		departure_arr_code,
+		departure_arr_name,
+		departure_arr_city,
+		destination_des_code,
+		destination_des_name,
+		destination_des_city,
+		date_format(departure_datetime,'%Y-%m-%d %H:%i:%s') as departure_datetime,
+		date_format(destination_datetime,'%Y-%m-%d %H:%i:%s') as destination_datetime,
+		date_format(timediff(destination_datetime,departure_datetime),'%H小时%i分钟%s秒') as duration,
+		statue,
+		lease_price,
+		seatnum,
+		airline,
+		flight_number,
+		amenities,
+		availablefirstClassSeats,
+  		availablebusinessSeats,
+        availableeconomySeats,
+        economyPrice,
+        businessPrice,
+        firstClassPrice
+	from
+		(SELECT 
+			flight.flight_id,
+			arr.airport_code as departure_arr_code,
+			arr.airport_name as departure_arr_name,
+			arr.airport_city as departure_arr_city,
+			concat(departure_date,' ',departure_time) as departure_datetime,
+			des.airport_code as destination_des_code,
+			des.airport_name as destination_des_name,
+			des.airport_city as destination_des_city,
+			concat(destination_date,' ',destination_time) as destination_datetime,
+			flight.statue,
+			LEAST(flight.first_class_price, flight.business_class_price, flight.economy_class_price) as lease_price,
+			flight.first_class_num+flight.business_class_num+flight.economy_class_num-IFNULL(seat.first_class_count,0)-IFNULL(seat.business_class_count,0)-IFNULL(seat.economy_class_count,0) as seatnum,
+			flight.airline,
+			flight.flight_number,
+			flight.amenities,
+			flight.first_class_price as firstClassPrice, 
+			flight.business_class_price as businessPrice, 
+			flight.economy_class_price as economyPrice,
+			
+			flight.first_class_num-IFNULL(seat.first_class_count,0) as availablefirstClassSeats,
+			flight.business_class_num-IFNULL(seat.business_class_count,0) as availablebusinessSeats,
+			flight.economy_class_num-IFNULL(seat.economy_class_count,0) as availableeconomySeats
+		FROM flight.flight 
+			inner join airport arr on flight.departure_airport_id = arr.airport_id
+			inner join airport des on flight.destination_airport_id = des.airport_id
+			left join seat on flight.flight_id = seat.flight_id
+		where arr.airport_city = #{departure,jdbcType=VARCHAR}
+			and des.airport_city = #{destination,jdbcType=VARCHAR}
+			and flight.departure_date = #{departureDate,jdbcType=DATE}) t
+	where seatnum>0
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from flight
+    where flight_id = #{flightId,jdbcType=BIGINT}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from flight
+    where flight_id = #{flightId,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" parameterType="com.example.demo.model.Flight">
+    insert into flight (flight_id, departure_airport_id, destination_airport_id, 
+      departure_date, departure_time, destination_date, 
+      destination_time, statue, first_class_price, 
+      business_class_price, economy_class_price, 
+      first_class_num, business_class_num, economy_class_num, 
+      airline, flight_number, amenities
+      )
+    values (#{flightId,jdbcType=BIGINT}, #{departureAirportId,jdbcType=BIGINT}, #{destinationAirportId,jdbcType=BIGINT}, 
+      #{departureDate,jdbcType=DATE}, #{departureTime,jdbcType=TIME}, #{destinationDate,jdbcType=DATE}, 
+      #{destinationTime,jdbcType=TIME}, #{statue,jdbcType=VARCHAR}, #{firstClassPrice,jdbcType=DECIMAL}, 
+      #{businessClassPrice,jdbcType=DECIMAL}, #{economyClassPrice,jdbcType=DECIMAL}, 
+      #{firstClassNum,jdbcType=INTEGER}, #{businessClassNum,jdbcType=INTEGER}, #{economyClassNum,jdbcType=INTEGER}, 
+      #{airline,jdbcType=VARCHAR}, #{flightNumber,jdbcType=VARCHAR}, #{amenities,jdbcType=VARCHAR}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="com.example.demo.model.Flight">
+    insert into flight
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="flightId != null">
+        flight_id,
+      </if>
+      <if test="departureAirportId != null">
+        departure_airport_id,
+      </if>
+      <if test="destinationAirportId != null">
+        destination_airport_id,
+      </if>
+      <if test="departureDate != null">
+        departure_date,
+      </if>
+      <if test="departureTime != null">
+        departure_time,
+      </if>
+      <if test="destinationDate != null">
+        destination_date,
+      </if>
+      <if test="destinationTime != null">
+        destination_time,
+      </if>
+      <if test="statue != null">
+        statue,
+      </if>
+      <if test="firstClassPrice != null">
+        first_class_price,
+      </if>
+      <if test="businessClassPrice != null">
+        business_class_price,
+      </if>
+      <if test="economyClassPrice != null">
+        economy_class_price,
+      </if>
+      <if test="firstClassNum != null">
+        first_class_num,
+      </if>
+      <if test="businessClassNum != null">
+        business_class_num,
+      </if>
+      <if test="economyClassNum != null">
+        economy_class_num,
+      </if>
+      <if test="airline != null">
+        airline,
+      </if>
+      <if test="flightNumber != null">
+        flight_number,
+      </if>
+      <if test="amenities != null">
+        amenities,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="flightId != null">
+        #{flightId,jdbcType=BIGINT},
+      </if>
+      <if test="departureAirportId != null">
+        #{departureAirportId,jdbcType=BIGINT},
+      </if>
+      <if test="destinationAirportId != null">
+        #{destinationAirportId,jdbcType=BIGINT},
+      </if>
+      <if test="departureDate != null">
+        #{departureDate,jdbcType=DATE},
+      </if>
+      <if test="departureTime != null">
+        #{departureTime,jdbcType=TIME},
+      </if>
+      <if test="destinationDate != null">
+        #{destinationDate,jdbcType=DATE},
+      </if>
+      <if test="destinationTime != null">
+        #{destinationTime,jdbcType=TIME},
+      </if>
+      <if test="statue != null">
+        #{statue,jdbcType=VARCHAR},
+      </if>
+      <if test="firstClassPrice != null">
+        #{firstClassPrice,jdbcType=DECIMAL},
+      </if>
+      <if test="businessClassPrice != null">
+        #{businessClassPrice,jdbcType=DECIMAL},
+      </if>
+      <if test="economyClassPrice != null">
+        #{economyClassPrice,jdbcType=DECIMAL},
+      </if>
+      <if test="firstClassNum != null">
+        #{firstClassNum,jdbcType=INTEGER},
+      </if>
+      <if test="businessClassNum != null">
+        #{businessClassNum,jdbcType=INTEGER},
+      </if>
+      <if test="economyClassNum != null">
+        #{economyClassNum,jdbcType=INTEGER},
+      </if>
+      <if test="airline != null">
+        #{airline,jdbcType=VARCHAR},
+      </if>
+      <if test="flightNumber != null">
+        #{flightNumber,jdbcType=VARCHAR},
+      </if>
+      <if test="amenities != null">
+        #{amenities,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.example.demo.model.Flight">
+    update flight
+    <set>
+      <if test="departureAirportId != null">
+        departure_airport_id = #{departureAirportId,jdbcType=BIGINT},
+      </if>
+      <if test="destinationAirportId != null">
+        destination_airport_id = #{destinationAirportId,jdbcType=BIGINT},
+      </if>
+      <if test="departureDate != null">
+        departure_date = #{departureDate,jdbcType=DATE},
+      </if>
+      <if test="departureTime != null">
+        departure_time = #{departureTime,jdbcType=TIME},
+      </if>
+      <if test="destinationDate != null">
+        destination_date = #{destinationDate,jdbcType=DATE},
+      </if>
+      <if test="destinationTime != null">
+        destination_time = #{destinationTime,jdbcType=TIME},
+      </if>
+      <if test="statue != null">
+        statue = #{statue,jdbcType=VARCHAR},
+      </if>
+      <if test="firstClassPrice != null">
+        first_class_price = #{firstClassPrice,jdbcType=DECIMAL},
+      </if>
+      <if test="businessClassPrice != null">
+        business_class_price = #{businessClassPrice,jdbcType=DECIMAL},
+      </if>
+      <if test="economyClassPrice != null">
+        economy_class_price = #{economyClassPrice,jdbcType=DECIMAL},
+      </if>
+      <if test="firstClassNum != null">
+        first_class_num = #{firstClassNum,jdbcType=INTEGER},
+      </if>
+      <if test="businessClassNum != null">
+        business_class_num = #{businessClassNum,jdbcType=INTEGER},
+      </if>
+      <if test="economyClassNum != null">
+        economy_class_num = #{economyClassNum,jdbcType=INTEGER},
+      </if>
+      <if test="airline != null">
+        airline = #{airline,jdbcType=VARCHAR},
+      </if>
+      <if test="flightNumber != null">
+        flight_number = #{flightNumber,jdbcType=VARCHAR},
+      </if>
+      <if test="amenities != null">
+        amenities = #{amenities,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where flight_id = #{flightId,jdbcType=BIGINT}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.example.demo.model.Flight">
+    update flight
+    set departure_airport_id = #{departureAirportId,jdbcType=BIGINT},
+      destination_airport_id = #{destinationAirportId,jdbcType=BIGINT},
+      departure_date = #{departureDate,jdbcType=DATE},
+      departure_time = #{departureTime,jdbcType=TIME},
+      destination_date = #{destinationDate,jdbcType=DATE},
+      destination_time = #{destinationTime,jdbcType=TIME},
+      statue = #{statue,jdbcType=VARCHAR},
+      first_class_price = #{firstClassPrice,jdbcType=DECIMAL},
+      business_class_price = #{businessClassPrice,jdbcType=DECIMAL},
+      economy_class_price = #{economyClassPrice,jdbcType=DECIMAL},
+      first_class_num = #{firstClassNum,jdbcType=INTEGER},
+      business_class_num = #{businessClassNum,jdbcType=INTEGER},
+      economy_class_num = #{economyClassNum,jdbcType=INTEGER},
+      airline = #{airline,jdbcType=VARCHAR},
+      flight_number = #{flightNumber,jdbcType=VARCHAR},
+      amenities = #{amenities,jdbcType=VARCHAR}
+    where flight_id = #{flightId,jdbcType=BIGINT}
+  </update>
+</mapper>

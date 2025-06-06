@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.PassengerMapper">
+  <resultMap id="BaseResultMap" type="com.example.demo.model.Passenger">
+    <id column="passenger_id" jdbcType="VARCHAR" property="passengerId" />
+    <result column="booking_id" jdbcType="VARCHAR" property="bookingId" />
+    <result column="email" jdbcType="VARCHAR" property="email" />
+    <result column="first_name" jdbcType="VARCHAR" property="firstName" />
+    <result column="last_name" jdbcType="VARCHAR" property="lastName" />
+    <result column="phone" jdbcType="VARCHAR" property="phone" />
+    <result column="id_no" jdbcType="VARCHAR" property="idNo" />
+    <result column="seat_class" jdbcType="VARCHAR" property="seatClass" />
+    <result column="seat" jdbcType="VARCHAR" property="seat" />
+    <result column="gate" jdbcType="VARCHAR" property="gate" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    passenger_id, booking_id, email, first_name, last_name, phone, id_no, seat_class, 
+    seat, gate
+  </sql>
+  <select id="selectBookingPassenger" parameterType="java.lang.String" resultType="com.example.demo.model.BookingPassengers">
+	SELECT 
+		passenger.passenger_id as passengerId,
+		passenger.first_name as firstName,
+		passenger.last_name as lastName,
+		passenger.email,
+		passenger.phone,
+		passenger.id_no as idNo,
+		passenger.seat_class as seat,
+		case passenger.seat_class when 'business' then flight.business_class_price
+						          when 'economy' then flight.economy_class_price
+						          when 'firstClass' then flight.first_class_price
+    	END AS price
+
+	FROM passenger inner join booking on passenger.booking_id = booking.booking_id
+		inner join flight on booking.flight_id = flight.flight_id
+	where passenger.booking_id=#{bookingId,jdbcType=VARCHAR}
+  </select>
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from passenger
+    where passenger_id = #{passengerId,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from passenger
+    where passenger_id = #{passengerId,jdbcType=VARCHAR}
+  </delete>
+  <insert id="insert" parameterType="com.example.demo.model.Passenger">
+    insert into passenger (passenger_id, booking_id, email, 
+      first_name, last_name, phone, 
+      id_no, seat_class, seat, 
+      gate)
+    values (#{passengerId,jdbcType=VARCHAR}, #{bookingId,jdbcType=VARCHAR}, #{email,jdbcType=VARCHAR}, 
+      #{firstName,jdbcType=VARCHAR}, #{lastName,jdbcType=VARCHAR}, #{phone,jdbcType=VARCHAR}, 
+      #{idNo,jdbcType=VARCHAR}, #{seatClass,jdbcType=VARCHAR}, #{seat,jdbcType=VARCHAR}, 
+      #{gate,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.example.demo.model.Passenger">
+    insert into passenger
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="passengerId != null">
+        passenger_id,
+      </if>
+      <if test="bookingId != null">
+        booking_id,
+      </if>
+      <if test="email != null">
+        email,
+      </if>
+      <if test="firstName != null">
+        first_name,
+      </if>
+      <if test="lastName != null">
+        last_name,
+      </if>
+      <if test="phone != null">
+        phone,
+      </if>
+      <if test="idNo != null">
+        id_no,
+      </if>
+      <if test="seatClass != null">
+        seat_class,
+      </if>
+      <if test="seat != null">
+        seat,
+      </if>
+      <if test="gate != null">
+        gate,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="passengerId != null">
+        #{passengerId,jdbcType=VARCHAR},
+      </if>
+      <if test="bookingId != null">
+        #{bookingId,jdbcType=VARCHAR},
+      </if>
+      <if test="email != null">
+        #{email,jdbcType=VARCHAR},
+      </if>
+      <if test="firstName != null">
+        #{firstName,jdbcType=VARCHAR},
+      </if>
+      <if test="lastName != null">
+        #{lastName,jdbcType=VARCHAR},
+      </if>
+      <if test="phone != null">
+        #{phone,jdbcType=VARCHAR},
+      </if>
+      <if test="idNo != null">
+        #{idNo,jdbcType=VARCHAR},
+      </if>
+      <if test="seatClass != null">
+        #{seatClass,jdbcType=VARCHAR},
+      </if>
+      <if test="seat != null">
+        #{seat,jdbcType=VARCHAR},
+      </if>
+      <if test="gate != null">
+        #{gate,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.example.demo.model.Passenger">
+    update passenger
+    <set>
+      <if test="bookingId != null">
+        booking_id = #{bookingId,jdbcType=VARCHAR},
+      </if>
+      <if test="email != null">
+        email = #{email,jdbcType=VARCHAR},
+      </if>
+      <if test="firstName != null">
+        first_name = #{firstName,jdbcType=VARCHAR},
+      </if>
+      <if test="lastName != null">
+        last_name = #{lastName,jdbcType=VARCHAR},
+      </if>
+      <if test="phone != null">
+        phone = #{phone,jdbcType=VARCHAR},
+      </if>
+      <if test="idNo != null">
+        id_no = #{idNo,jdbcType=VARCHAR},
+      </if>
+      <if test="seatClass != null">
+        seat_class = #{seatClass,jdbcType=VARCHAR},
+      </if>
+      <if test="seat != null">
+        seat = #{seat,jdbcType=VARCHAR},
+      </if>
+      <if test="gate != null">
+        gate = #{gate,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where passenger_id = #{passengerId,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.example.demo.model.Passenger">
+    update passenger
+    set booking_id = #{bookingId,jdbcType=VARCHAR},
+      email = #{email,jdbcType=VARCHAR},
+      first_name = #{firstName,jdbcType=VARCHAR},
+      last_name = #{lastName,jdbcType=VARCHAR},
+      phone = #{phone,jdbcType=VARCHAR},
+      id_no = #{idNo,jdbcType=VARCHAR},
+      seat_class = #{seatClass,jdbcType=VARCHAR},
+      seat = #{seat,jdbcType=VARCHAR},
+      gate = #{gate,jdbcType=VARCHAR}
+    where passenger_id = #{passengerId,jdbcType=VARCHAR}
+  </update>
+</mapper>
