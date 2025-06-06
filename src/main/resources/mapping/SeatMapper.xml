@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.SeatMapper">
+  <resultMap id="BaseResultMap" type="com.example.demo.model.Seat">
+    <id column="flight_id" jdbcType="BIGINT" property="flightId" />
+    <result column="first_class_count" jdbcType="INTEGER" property="firstClassCount" />
+    <result column="business_class_count" jdbcType="INTEGER" property="businessClassCount" />
+    <result column="economy_class_count" jdbcType="INTEGER" property="economyClassCount" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    flight_id, first_class_count, business_class_count, economy_class_count
+  </sql>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from seat
+    where flight_id = #{flightId,jdbcType=BIGINT}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Long">
+    delete from seat
+    where flight_id = #{flightId,jdbcType=BIGINT}
+  </delete>
+  <insert id="insert" parameterType="com.example.demo.model.Seat">
+    insert into seat (flight_id, first_class_count, business_class_count, 
+      economy_class_count)
+    values (#{flightId,jdbcType=BIGINT}, #{firstClassCount,jdbcType=INTEGER}, #{businessClassCount,jdbcType=INTEGER}, 
+      #{economyClassCount,jdbcType=INTEGER})
+  </insert>
+  <insert id="insertSelective" parameterType="com.example.demo.model.Seat">
+    insert into seat
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="flightId != null">
+        flight_id,
+      </if>
+      <if test="firstClassCount != null">
+        first_class_count,
+      </if>
+      <if test="businessClassCount != null">
+        business_class_count,
+      </if>
+      <if test="economyClassCount != null">
+        economy_class_count,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="flightId != null">
+        #{flightId,jdbcType=BIGINT},
+      </if>
+      <if test="firstClassCount != null">
+        #{firstClassCount,jdbcType=INTEGER},
+      </if>
+      <if test="businessClassCount != null">
+        #{businessClassCount,jdbcType=INTEGER},
+      </if>
+      <if test="economyClassCount != null">
+        #{economyClassCount,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.example.demo.model.Seat">
+    update seat
+    <set>
+      <if test="firstClassCount != null">
+        first_class_count = #{firstClassCount,jdbcType=INTEGER},
+      </if>
+      <if test="businessClassCount != null">
+        business_class_count = #{businessClassCount,jdbcType=INTEGER},
+      </if>
+      <if test="economyClassCount != null">
+        economy_class_count = #{economyClassCount,jdbcType=INTEGER},
+      </if>
+    </set>
+    where flight_id = #{flightId,jdbcType=BIGINT}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.example.demo.model.Seat">
+    update seat
+    set first_class_count = #{firstClassCount,jdbcType=INTEGER},
+      business_class_count = #{businessClassCount,jdbcType=INTEGER},
+      economy_class_count = #{economyClassCount,jdbcType=INTEGER}
+    where flight_id = #{flightId,jdbcType=BIGINT}
+  </update>
+</mapper>
